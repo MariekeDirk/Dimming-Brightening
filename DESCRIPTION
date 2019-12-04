@@ -1,13 +1,13 @@
 Package: DimBri
-Title: What the Package Does (One Line, Title Case)
+Title: Dimming and Brightening analysis for global radiation
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Marieke",
+           family = "Dirksen",
            role = c("aut", "cre"),
-           email = "first.last@example.com")
-Description: What the package does (one paragraph).
+           email = "marieke.dirksen@knmi.nl")
+Description: Calculations of monthly averages, gap filling and trend analysis. Clear sky and all sky daily data can be seperated with additional information on daily cloud cover.
 License: What license it uses
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.1

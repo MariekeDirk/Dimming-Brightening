@@ -2,7 +2,13 @@
 
 export(allsky_monthly_qq)
 export(clearsky_monthly_qq_cc)
+export(completeness.series)
+export(fill_gap)
+export(fill_time_series)
+export(fit_sens_slope)
+export(get_change_point)
 export(read_ECA_info)
+export(read_monthly_QQ)
 export(read_qq)
 export(read_qq_cc)
 export(seasonal_trend)

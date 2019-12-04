@@ -15,7 +15,7 @@ clearsky_monthly_qq_cc(qq_cc = qq_cc_day, min_obs = 2)
 returns a dataframe with monthly values and additionally the season and year.
 }
 \description{
-Needs both qq and cc as input. Clear sky monthly values are calculated if a 
+Needs both qq and cc as input. Clear sky monthly values are calculated if a
 minumum of two daily observations in the month with 0 or 1 okta were measured.
 }
 \author{

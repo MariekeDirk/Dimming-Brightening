@@ -1,4 +1,5 @@
 library(data.table)
+library(DimBri)
 library(lubridate)
 library(plyr)
 library(seas)
@@ -13,7 +14,7 @@ qq_data    <- lapply(qq_files,read_qq)
 qq_data    <- lapply(qq_data,function(x){ x[which(x$QQ==-9999),]<-NA; x[complete.cases(x),]})
 # qq_data    <- lapply(qq_data,function(x){ x[which(x$QQ<0),]<-0})
 
-qq_monthly <- lapply(qq_data,allsky_monthly_qq_cc)
+qq_monthly <- lapply(qq_data,allsky_monthly_qq)
 qq_monthly <- do.call("rbind",qq_monthly)
 write.table(qq_monthly,
             file = paste0(file_loc$main_loc,"/",file_loc$global_radiation,"/QQ_monthly.txt"),

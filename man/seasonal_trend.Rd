@@ -13,7 +13,7 @@ seasonal_trend(qq_month)
 returns a dataframe with seasonal and normalized seasonal values
 }
 \description{
-Calculates seasonal trends from monthly averaged values calculated from 
+Calculates seasonal trends from monthly averaged values calculated from
 \link{clearsky_monthly_qq_cc} and \link{allsky_monthly_qq}.
 }
 \author{
