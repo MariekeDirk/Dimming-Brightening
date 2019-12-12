@@ -35,7 +35,13 @@ prepare_ecad_climatol<-function(t.start,t.stop,stations_qq,series_qq){
   stations_qq$STAID<-paste0("sta_id",stations_qq$STAID)
   stations_qq$lon<-as.numeric(stations_qq$lon)
   stations_qq$lat<-as.numeric(stations_qq$lat)
-
+  # stations_qq$name<-gsub(" ","",stations_qq$name)
+  # stations_qq$name<-gsub("-","",stations_qq$name)
+  # stations_qq$name<-gsub("/","",stations_qq$name)
+  # stations_qq$name<-gsub("_","",stations_qq$name)
+  # stations_qq$name<-gsub("\\.","",stations_qq$name)
+  # stations_qq$name<-gsub("\\(","",stations_qq$name)
+  # stations_qq$name<-gsub("\\)","",stations_qq$name)
 
   series_qq <- subset(combined_series,select = c("month_year","STAID","QQm"))
   #Create wide format
@@ -43,8 +49,6 @@ prepare_ecad_climatol<-function(t.start,t.stop,stations_qq,series_qq){
   series_qq_wide <- dplyr::select(series_qq_wide,-month_year)
   series_qq_wide<-t(series_qq_wide)
   #if the correlation matrix still looks wierd try to transpose series_qq_wide
-
-  dim(series_qq_wide)
 
   ######### Write output
   # series files
@@ -54,7 +58,8 @@ prepare_ecad_climatol<-function(t.start,t.stop,stations_qq,series_qq){
   #write station file
   stations.file<-paste0("QQ-m_",t.start,"-",t.stop,".est")
   write.table(stations_qq,stations.file,
-              row.names=FALSE,col.names=FALSE)
+              row.names=FALSE,col.names=FALSE,quote = TRUE)
+  # write(stations_qq,stations.file)
   ########################
 
   return(list("series"=series.file,"stations"=stations.file))

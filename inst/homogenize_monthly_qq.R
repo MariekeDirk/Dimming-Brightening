@@ -32,23 +32,26 @@ homogen('QQ-m',t.start,t.stop,std = 3, snht1 = 25,wd=c(750,500,250))
 #look at the results
 break_points<-fread(paste0("QQ-m_",t.start,"-",t.stop,"_brk.csv"))
 
-dahstat("QQ",t.start,t.stop,stat='series') #writes series.csv and flags.csv
-hom_flags<-fread(paste0("QQ_",t.start,"-",t.stop,"_flags.csv"),header = TRUE) #fist column=date, others are stations
-hom_series<-fread(paste0("QQ_",t.start,"-",t.stop,"_series.csv"),header=TRUE)
+#somehow the series with multiple names are duplicated! something wrong with the quotes?
+staid<-paste0("sta_id",stations_qq$sou_id)
+dahstat("QQ-m",t.start,t.stop,stat='series',cod=staid) #writes series.csv and flags.csv
+
+hom_flags<-fread(paste0("QQ-m_",t.start,"-",t.stop,"_flags.csv"),header = TRUE) #fist column=date, others are stations
+hom_series<-fread(paste0("QQ-m_",t.start,"-",t.stop,"_series.csv"),header=TRUE)
 
 #Visualization of the original and corrected timeseries
 # load('QQ_2000-2018.rda')
 sta_id<-"6930" #Stockholm
 
 time_series<-hom_series[,1]; names(time_series) <- "time"
-original_series<-series_qq_wide[,"6930"]; names(original_series) <- "original"
-homogenized_series<-hom_series[,"6930"]; names(homogenized_series) <- "homogenized"
+original_series<-series_qq_wide["QQm.12",]; names(original_series) <- "original"
+homogenized_series<-hom_series[,"sta_id12"]; names(homogenized_series) <- "homogenized"
 
 df <- data.frame(time_series,original_series,homogenized_series)
 df_long<-gather(df,"series","measurement",-time)
 df_long$series<-as.factor(df_long$series)
 
 library(ggplot2)
-ggplot(df_long,aes(time,measurement,color=series)) +geom_point()
+ggplot(df_long,aes(time,measurement,color=series)) + geom_point()
 
 
