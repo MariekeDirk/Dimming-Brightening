@@ -11,8 +11,8 @@ read_ECA_info<-function(fname){
 
   stations$lat<-as.character(gsub(":"," ",stations$lat))
   stations$lon<-as.character(gsub(":"," ",stations$lon))
-  stations$lat = measurements::conv_unit(stations$lat, from = 'deg_min_sec', to = 'dec_deg')
-  stations$lon = measurements::conv_unit(stations$lon, from = 'deg_min_sec', to = 'dec_deg')
+  stations$lat = as.numeric(measurements::conv_unit(stations$lat, from = 'deg_min_sec', to = 'dec_deg'))
+  stations$lon = as.numeric(measurements::conv_unit(stations$lon, from = 'deg_min_sec', to = 'dec_deg'))
   return(stations)
 }
 

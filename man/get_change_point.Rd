@@ -4,13 +4,13 @@
 \alias{get_change_point}
 \title{Find the change point in time-series}
 \usage{
-get_change_point(series, h.years = 10)
+get_change_point(series, station.name = "5 year moving average", brk.max)
 }
 \arguments{
 \item{series}{As calculated by \link{clearsky_monthly_qq_cc} or \link{allsky_monthly_qq}, possibly combined
 with the gap filled series from \link{fill_time_series}.}
 
-\item{h.years}{minimum number of years between the change point detections}
+\item{station.name}{name of the station, used as title for the ggplot}
 }
 \value{
 Returns the fitted trend model and a plot of the time series with trend and change points.
