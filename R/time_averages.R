@@ -23,6 +23,32 @@ allsky_monthly_qq <- function(qq=qq_cc_day,frac=0.8){
   } else{return(NULL)}
 }
 
+#'Calculate monthly all sky
+#'@description Needs only cc as input. A minimum of 80\% of the monthly values should be present
+#'to calculate monthly averages.
+#'@param qq daily global radiation observations
+#'@param frac minimum fraction of daily observations in the month
+#'@return returns a dataframe with monthly values and additionally the season and year.
+#'@author Marieke Dirksen
+#'@export
+allsky_monthly_cc <- function(qq=qq_cc_day,frac=0.8){
+  if(length(qq$CC)==0){return(NULL)}
+  qq$month_year<-format(qq$DATE,"%Y-%m")
+  qq$nr_days<-days_in_month(qq$DATE)
+  qq_month<-ddply(qq,~month_year,summarise,CCm=mean(CC)/8,frac=length(CC)/unique(nr_days))
+  qq_month<-qq_month[which(qq_month$frac>frac),]
+
+  #set the dates and seasons back into the df
+  if(length(qq_month$CCm>0)){
+    qq_month$month_year<-as.Date(paste0(qq_month$month_year,"-01"),format="%Y-%m-%d")
+    qq_month$season <- mkseas(x = qq_month$month_year, width = "DJF")
+    qq_month$year <- year(qq_month$month_year)
+    qq_month$STAID <- unique(qq$STAID)
+    return(qq_month)
+  } else{return(NULL)}
+}
+
+
 #'Calculate monthly clear sky
 #'@description Needs both qq and cc as input. Clear sky monthly values are calculated if a
 #'minumum of two daily observations in the month with 0 or 1 okta were measured.

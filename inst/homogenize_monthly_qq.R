@@ -3,6 +3,7 @@ library(data.table)
 library(DimBri)
 library(tidyr)
 library(dplyr)
+`%notin%` <- Negate(`%in%`)
 main_dir<-"/net/pc150400/nobackup/users/dirksen/data/radiation_europe/"
 
 wd0<-setwd(paste0(main_dir,"homogen"))
@@ -14,6 +15,18 @@ t.stop=2018
 stations_qq <- read_ECA_info(paste0(main_dir,"SunCloud/qq/stations_qq.txt"))
 series_qq <- read_monthly_QQ(paste0(main_dir,"SunCloud/QQ_monthly.txt"))
 
+#merge series
+stations_qq[grep(" [1-9]",stations_qq$name),]
+#make one series of the following pairs:
+#QUINTA DE AZEVEDO: 10989 10991
+#QUINTA DE CARVALHAIS: 10994 10995 10996
+#QUINTA DA LEDA: 10997 10998 10999
+#QUINTA DO SAIRRAO: 11000 11001 11002
+#QUINTA DO PESO: 11005 11006 11007
+#or remove these series from the analysis
+staid_out<-c(10989,10991,10994,10995,10996,10997,10998,10999,11000,11001,11002,11005,11006,11007)
+stations_qq<-stations_qq[stations_qq$sou_id %notin% staid_out]
+
 prepare_ecad_climatol(t.start=t.start,t.stop=t.stop,stations_qq=stations_qq,series_qq=series_qq)
 #HOMOGENIZATION PROCEDURE
 #climatol
@@ -22,7 +35,8 @@ prepare_ecad_climatol(t.start=t.start,t.stop=t.stop,stations_qq=stations_qq,seri
 #from the pdf the following values are found
 # homogen('QQ-m',t.start,t.stop,std = 3, snht1 = 25)#,wd=c(750,500,250)
 homogen('QQ-m',t.start,t.stop,expl = TRUE)
-homogen('QQ-m',t.start,t.stop,std = 3, snht1 = 25,wd=c(750,500,250))
+homogen('QQ-m',t.start,t.stop,
+        std = 3, snht1 = 30, snht2 = 25, dz.max=9, wd=c(750,500,250))
 #homogenizing different sub-areas has the disadvantage of data voides
 # homogsplit('QQ-m',t.start,t.stop,std=3,snht1=25,
 #            wd=c(750,500,250), #weights for the 3 different stages of the homogenization the default excludes too much qq data
