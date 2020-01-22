@@ -50,7 +50,7 @@ qq_m_c_f$measurement.years<-qq_m_c_f$stop.year-qq_m_c_f$start.year
 #What is the completeness of stations with a start around 1965 and stop around 2018?
 get_spatial_coverage<-function(meta=qq_meta,
                                stations_info=qq_m_c_f,
-                               t1=1980,t2=2017){
+                               t1=1960,t2=2017){
   qq_sub<-stations_info[which(stations_info$start.year<t1 & stations_info$stop.year>t2),]
 
   qq_sp<-merge(meta,qq_sub,by="STAID")
