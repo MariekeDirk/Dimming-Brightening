@@ -30,12 +30,7 @@ qq_m_c_f<-do.call("rbind",qq_m_c_f)
 mean(qq_m_c_f$completeness)
 
 #Make a plot with start years and completeness for Europe
-qq_meta<-read_ECA_info(fname = paste0(file_loc$main_loc,"/",file_loc$global_radiation,"/stations_qq.txt"))
-# qq_meta<-read_ECA_info(fname=paste0(file_loc$main_loc,file_loc$global_radiation,"/ECA_nonblend_info_qq.txt"))
-names(qq_meta)<-c("STAID","name","coun_id","lat","lon","elev")
-qq_meta$lat<-as.numeric(qq_meta$lat)
-qq_meta$lon<-as.numeric(qq_meta$lon)
-qq_meta$STAID<-as.character(qq_meta$STAID)
+
 
 qq_m_c_f$STAID<-as.character(qq_m_c_f$STAID)
 
@@ -67,7 +62,7 @@ get_spatial_coverage<-function(meta=qq_meta,
   return(list("map"=m,"sp"=qq_sp))
 }
 
-long_records<-get_spatial_coverage(t1=1966)
+long_records<-get_spatial_coverage(t1=1980)
 
 df.long_records<-data.frame(long_records$sp)
 df.long_records$name<-gsub("/","-",df.long_records$name)
