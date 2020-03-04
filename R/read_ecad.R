@@ -13,6 +13,7 @@ read_ECA_info<-function(fname){
   stations$lon<-as.character(gsub(":"," ",stations$lon))
   stations$lat = as.numeric(measurements::conv_unit(stations$lat, from = 'deg_min_sec', to = 'dec_deg'))
   stations$lon = as.numeric(measurements::conv_unit(stations$lon, from = 'deg_min_sec', to = 'dec_deg'))
+  stations$sou_id<-as.integer(stations$sou_id)
   return(stations)
 }
 
@@ -65,4 +66,28 @@ read_monthly_QQ<-function(monthly_qq=paste0(file_loc$main_loc,"/",file_loc$globa
   qq_monthly$month_year<-as.Date(qq_monthly$month_year)
   qq_monthly$STAID<-as.character(qq_monthly$STAID)
   return(qq_monthly)
+}
+
+#'Prepare monthly files of global radiation from sunshine duration
+#'@description Reads the monthly ss2qq files
+#'@param main_path main path where the SunCloud folder with all the data is
+#'@author Marieke Dirksen
+#'@export
+prepare_series_ss2qq<-function(main_path){
+  series_ss2qq.list<-list.files(path=paste0(main_path,"SunCloud/ss2qq/"),pattern="indexSS2QQ*",full.names=TRUE)
+  series_ss2qq<-mapply(fread,series_ss2qq.list,MoreArgs = list(header=FALSE))
+  ncolumns<-lapply(series_ss2qq,ncol)
+  ncolumns<-data.frame(do.call(rbind,ncolumns))
+  names(ncolumns)<-"n"
+  series_in<-which(ncolumns$n==4)
+  series_ss2qq<-series_ss2qq[series_in]
+  series_ss2qq<-do.call(rbind,series_ss2qq)
+  names(series_ss2qq)<-c("STAID","month_year","QQm","qc")
+  series_ss2qq$QQm<-series_ss2qq$QQm*10
+  series_ss2qq<-series_ss2qq[which(series_ss2qq$qc==0)]
+  series_ss2qq$month_year<-substr(series_ss2qq$month_year,1,nchar(series_ss2qq$month_year)-2)
+  series_ss2qq$month_year<-paste0(series_ss2qq$month_year,"01")
+  series_ss2qq$month_year<-as.Date(series_ss2qq$month_year,format="%Y%m%d")
+  series_ss2qq<-subset(series_ss2qq,select = c("month_year","QQm","STAID"))
+  return(series_ss2qq)
 }

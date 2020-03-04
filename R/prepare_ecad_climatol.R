@@ -16,8 +16,26 @@ prepare_ecad_climatol<-function(t.start,t.stop,stations_qq,series_qq){
   series_qq<-series_qq[complete.cases(series_qq),]
   series_qq<-as.data.table(series_qq)
   setkey(series_qq,"STAID")
+  series_qq$year<-year(series_qq$month_year)
+
+  #to prevent series with less than a year of data count the months:
+  cnt_years<-series_qq %>% group_by(STAID) %>% summarize(min=min(year),max=max(year))
+  cnt_min<-series_qq[(series_qq$STAID %in% cnt_years$STAID & series_qq$year %in% cnt_years$min),]
+  cnt_max<-series_qq[(series_qq$STAID %in% cnt_years$STAID & series_qq$year %in% cnt_years$max),]
+
+  cnt_min<- cnt_min %>% group_by(STAID,year) %>% summarise(nr.months=n())
+  out_min<-cnt_min[which(cnt_min$nr.months<12),]
+
+  cnt_max<- cnt_max %>% group_by(STAID,year) %>% summarise(nr.months=n())
+  out_max<-cnt_max[which(cnt_max$nr.months<12),]
+
+  series_qq<-series_qq[!(series_qq$STAID %in% out_min$STAID & series_qq$year %in% out_min$year),]
+  series_qq<-series_qq[!(series_qq$STAID %in% out_max$STAID & series_qq$year %in% out_max$year),]
+
+  #end count and subset
+
   series_qq <- subset(series_qq,select = c("month_year","STAID","QQm"))
-  series_qq$STAID<-as.character(series_qq$STAID)
+    series_qq$STAID<-as.character(series_qq$STAID)
 
   #Prepare station info
   names(stations_qq)<-c("STAID","name","coun_id","lat","lon","elev")
@@ -43,17 +61,30 @@ prepare_ecad_climatol<-function(t.start,t.stop,stations_qq,series_qq){
   # stations_qq$name<-gsub("\\(","",stations_qq$name)
   # stations_qq$name<-gsub("\\)","",stations_qq$name)
 
+
   series_qq <- subset(combined_series,select = c("month_year","STAID","QQm"))
+  #remove duplicated series!
+
   #Create wide format
+  # time_vec<-data.frame(seq(from=t.start,to=t.stop,by="months"));names(time_vec)<-"month_year"
+
   series_qq_wide <- reshape(series_qq,idvar = "month_year",timevar="STAID",direction = "wide")
   series_qq_wide <- dplyr::select(series_qq_wide,-month_year)
   series_qq_wide<-t(series_qq_wide)
+
+
+  # series_qq_wide <- reshape(series_qq,idvar = "month_year",timevar="STAID",direction = "wide")
+  # series_qq_wide <- dplyr::select(series_qq_wide,-month_year)
+  # series_qq_wide<-t(series_qq_wide)
+
   #if the correlation matrix still looks wierd try to transpose series_qq_wide
 
   ######### Write output
   # series files
   series.file<-paste0("QQ-m_",t.start,"-",t.stop,".dat")
-  write.table(series_qq_wide,series.file,row.names=FALSE,col.names=FALSE)
+  #In the manual: write(dat, 'Ttest_1981-2000.dat') #save the data file but is depreciated
+  # write(series_qq_wide,series.file) #creates a .rda output file
+  write.table(series_qq_wide,series.file,row.names=FALSE,col.names=FALSE,quote = FALSE,sep=" ")
 
   #write station file
   stations.file<-paste0("QQ-m_",t.start,"-",t.stop,".est")
@@ -61,6 +92,7 @@ prepare_ecad_climatol<-function(t.start,t.stop,stations_qq,series_qq){
               row.names=FALSE,col.names=FALSE,quote = TRUE)
   # write(stations_qq,stations.file)
   ########################
-
+  rm(stations_qq)
+  rm(series_qq)
   return(list("series"=series.file,"stations"=stations.file))
 }
