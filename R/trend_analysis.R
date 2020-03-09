@@ -2,17 +2,12 @@
 #'@description Fits sens slope to a time series within a period. It is adviced to run
 #'\link{get_change_point} first to find a proper time period for the fitting (without change points).
 #'@param series time-series to be analysed
-#'@param t.start start of the period in date fromat
-#'@param t.stop end of the period in date format
 #'@note See also \url{https://rcompanion.org/handbook/G_10.html}
 #'@author Marieke Dirksen
 #'@export
-fit_sens_slope<-function(series,t.start,t.stop){
+fit_sens_slope<-function(series){
   requireNamespace("trend")
   requireNamespace("plyr")
-
-  series<-series[which(series$month_year>t.start | series$month_year<t.stop),]
-  series$year<-year(series$month_year)
 
   setkey(series)
   series_y<-ddply(series, .(year), summarize,  QQy=mean(QQm))
@@ -21,29 +16,17 @@ fit_sens_slope<-function(series,t.start,t.stop){
   series_y$QQ5y <- frollmean(series_y$QQy,5)
   series_y<-series_y[complete.cases(series_y),]
 
-  ###
-  #the code below fits trends and breakpoints in timeseries, input needs to be of class ts
-
   series_y$year.date<-as.Date(series_y$year,format="%Y")
   series.ts<-xts(series_y$QQ5y,order.by = series_y$year.date)
   series.ts<-as.ts(series.ts)
 
-  series.trend <- sens.slope(series.ts)
-  return(series.trend)
-  #linear fit
-  # qq_fit<-lm(Nor ~ year,data=qq_cc)
-  #
-  # #in fit$model all the predicted values are stored
-  # #pvalues are computated after summary is called and can be extracted like:
-  # qq_cc$fit       <- qq_fit$fitted.values
-  # qq_cc$residuals <- qq_fit$residuals
-  #
-  # qq_fit<-data.frame("season" = unique(qq_cc$season),
-  #                    "pvalue" = coef(summary(qq_fit))[2,4],
-  #                    "slope"  = coef(qq_fit)[2])
-  # # qq_cc$pvalue     <- coef(summary(qq_fit))[2,4]
-  # # qq_cc$slope      <- coef(qq_fit)[2]
-  # return(list("qq_cc"=qq_cc,"qq_fit"=qq_fit))
+  series.trend <- trend::sens.slope(series.ts)
+  series.trend.df <- data.frame("STAID"=unique(series$STAID),
+                                "slope"=series.trend$estimates,
+                                "pval"=series.trend$p.value,
+                                "conf5"=series.trend$conf.int[1],
+                                "conf95"=series.trend$conf.int[2])
+  return(series.trend.df)
 }
 
 #'Find the change point in time-series
@@ -138,3 +121,48 @@ get_change_point<-function(series,
 }
   return(list("Trend"=trnd,"plot"=p)) #"br.test"=change.br,"bu.test"=change.bu,
 }
+
+#'Get spatial coverage
+#'@description uses the datasets `data("qq_meta")` and `data("qq_start_stop")` to map the
+#'spatial coverage of stations within a given time period and colors indicating the
+#'completeness of the series.
+#'@param meta file containing the geographical information
+#'@param station_info file containing the start, stop and completeness of the series
+#'@param t1 start of the time period
+#'@param t2 stop of the time period
+#'@return return a mapview interactive map and a spdf.
+#'@author Marieke Dirksen
+#'@export
+get_spatial_coverage<-function(meta=qq_meta,
+                               stations_info=qq_start_stop,
+                               t1=1980,t2=2017){
+  qq_sub<-stations_info[which(stations_info$start.year<t1 & stations_info$stop.year>t2),]
+
+  qq_sp<-merge(meta,qq_sub,by="STAID")
+
+  # leaflet(qq_sp) %>% addTiles() %>%
+  #   addCircleMarkers(~lon, ~lat, label = ~htmlEscape(name),
+  #              labelOptions = labelOptions(noHide = TRUE,textOnly = FALSE),
+  #              options = markerOptions(riseOnHover = TRUE))
+
+  coordinates(qq_sp)<-~lon+lat
+  crs(qq_sp)<-file_loc$CRS.arg
+
+  m<-mapview(qq_sp,zcol="completeness",at=seq(0,1,0.001))
+  return(list("map"=m,"sp"=qq_sp))
+}
+
+#linear fit
+# qq_fit<-lm(Nor ~ year,data=qq_cc)
+#
+# #in fit$model all the predicted values are stored
+# #pvalues are computated after summary is called and can be extracted like:
+# qq_cc$fit       <- qq_fit$fitted.values
+# qq_cc$residuals <- qq_fit$residuals
+#
+# qq_fit<-data.frame("season" = unique(qq_cc$season),
+#                    "pvalue" = coef(summary(qq_fit))[2,4],
+#                    "slope"  = coef(qq_fit)[2])
+# # qq_cc$pvalue     <- coef(summary(qq_fit))[2,4]
+# # qq_cc$slope      <- coef(qq_fit)[2]
+# return(list("qq_cc"=qq_cc,"qq_fit"=qq_fit))

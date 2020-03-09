@@ -138,3 +138,46 @@ plot_qq_cc(qq_scale,season = "autumn",station.name = "Europe")
 plot_stn <- mon_cc_qq[which(mon_cc_qq$STAID==665),]
 plot_qq_cc(plot_koper,station.name = "stn")
 
+#fit slope for time periods to different stations
+#function: fit_sens_slope
+#time periods for brightening climatology
+#(1) 1980 - 2010
+#(2) 1985 - 2015
+#(3) 1990 - 2020
+data("qq_start_stop")
+
+#brightening trends
+bright1<-get_spatial_coverage(t1=1995,t2=2015)
+bright2<-get_spatial_coverage(t1=1985,t2=2015)
+bright3<-get_spatial_coverage(t1=1990,t2=2015)
+dim1<-get_spatial_coverage(t1=1960,t2=1985)
+
+#dimming and brighitening trends
+map_dimbri(mon_qq,t1=1990,t2=2015)
+map_dimbri(mon_qq,t1=1985,t2=2015)
+map_dimbri(mon_qq,t1=2000,t2=2015)
+
+#dimming period
+
+map_dimbri(mon_qq,t1=1960,t2=1985)
+#get the unique STAIDs from the periods
+map_dimbri<-function(mon_qq,t1,t2){
+
+mon_qq_sub <- mon_qq[which(mon_qq$year>=t1 & mon_qq$year<=t2),]
+nr.years<-length(seq(t1,t2,by=1))*0.9
+staid_in <- mon_qq_sub %>% group_by(STAID) %>% summarise("years"=n()/12)
+staid_in <- staid_in$STAID[which(staid_in$years>=nr.years)]
+mon_qq_sub <- mon_qq[mon_qq$STAID %in% staid_in]
+mon_qq_sub <- mon_qq_sub[complete.cases(mon_qq_sub)]
+
+#calculate the trend for each ID with time constrains
+trends_staid <- by(mon_qq_sub,mon_qq_sub$STAID,fit_sens_slope)
+trends_staid <- do.call("rbind",trends_staid)
+trends_staid <- merge(trends_staid,qq_meta,by="STAID")
+
+sp_trends_staid<-trends_staid[which(trends_staid$pval<0.1),]
+coordinates(sp_trends_staid)<-~lon+lat
+crs(sp_trends_staid)<-file_loc$CRS.arg
+m<-mapview(sp_trends_staid,zcol="slope")
+return(list("trend"=trends_staid,"map"=m))
+}

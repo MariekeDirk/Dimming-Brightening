@@ -54,11 +54,23 @@ allsky_monthly_cc <- function(qq=qq_cc_day,frac=0.8){
 #'minumum of two daily observations in the month with 0 or 1 okta were measured.
 #'@param qq_cc_day daily global radiation and cloud cover observations
 #'@param min_obs minimum number of observations required to calculate monthly clear sky
+#'@param okta_max maximum number of cloud cover okta's concidered for the selection of
+#'clear sky days. Due to a lack of 0 okta observations in certain regions also 1 or 2
+#'okta have been used as upper limit.
 #'@return returns a dataframe with monthly values and additionally the season and year.
 #'@author Marieke Dirksen
 #'@export
-clearsky_monthly_qq_cc <- function(qq_cc=qq_cc_day,min_obs=2){
-  qq_cc <- qq_cc[which(qq_cc$CC==0 | qq_cc$CC==1),]
+clearsky_monthly_qq_cc <- function(qq_cc=qq_cc_day,okta_max=2,min_obs=2){
+  if(okta_max==0){
+    qq_cc <- qq_cc[which(qq_cc$CC==0),]
+  }
+  if(okta_max==1){
+    qq_cc <- qq_cc[which(qq_cc$CC==0 | qq_cc$CC==1),]
+  }
+  if(okta_max==2){
+    qq_cc <- qq_cc[which(qq_cc$CC==0 | qq_cc$CC==1 | qq_cc$CC==2),]
+  }
+
   if(length(qq_cc$QQ)==0){return(NULL)}
   qq_cc$month_year<-format(qq_cc$DATE,"%Y-%m")
   qq_cc_month<-ddply(qq_cc,~month_year,summarise,QQm=mean(QQ),frac=length(QQ)/min_obs)

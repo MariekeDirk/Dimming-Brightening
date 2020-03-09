@@ -4,14 +4,10 @@
 \alias{fit_sens_slope}
 \title{Fit sens slope to the series}
 \usage{
-fit_sens_slope(series, t.start, t.stop)
+fit_sens_slope(series)
 }
 \arguments{
 \item{series}{time-series to be analysed}
-
-\item{t.start}{start of the period in date fromat}
-
-\item{t.stop}{end of the period in date format}
 }
 \description{
 Fits sens slope to a time series within a period. It is adviced to run

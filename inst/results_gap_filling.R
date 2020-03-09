@@ -5,63 +5,12 @@ library(greenbrown)
 library(mapview)
 library(plyr)
 library(xts)
-source("inst/settings.R")
-#Read all sky and clear sky data
-series_cs<-read_monthly_QQ(monthly_qq = paste0(file_loc$main_loc,"/",file_loc$global_radiation,"/QQ_monthly_cs.txt"))
-qq_monthly_com<-with(series_cs,by(series_cs,STAID,function(x) completeness.series(x)))
-qq_monthly_com<-do.call("rbind",qq_monthly_com)
-mean(qq_monthly_com$completeness)
-
-series_cs_fill<-read_monthly_QQ(monthly_qq = paste0(file_loc$main_loc,"/",file_loc$global_radiation,"/QQ_monthly_cs_fill.txt"))
-series_cs_fill<-rbind(series_cs,series_cs_fill)
-qq_monthly_com_f<-with(series_cs_fill,by(series_cs_fill,STAID,function(x) completeness.series(x)))
-qq_monthly_com_f<-do.call("rbind",qq_monthly_com_f)
-mean(qq_monthly_com_f$completeness)
-
-series<-read_monthly_QQ(monthly_qq = paste0(file_loc$main_loc,"/",file_loc$global_radiation,"/QQ_monthly.txt"))
-qq_m_c<-with(series,by(series,STAID,function(x) completeness.series(x)))
-qq_m_c<-do.call("rbind",qq_m_c)
-mean(qq_m_c$completeness)
-
-series_fill<-read_monthly_QQ(monthly_qq = paste0(file_loc$main_loc,"/",file_loc$global_radiation,"/QQ_monthly_fill.txt"))
-series_fill<-rbind(series,series_fill)
-qq_m_c_f<-with(series_fill,by(series_fill,STAID,function(x) completeness.series(x)))
-qq_m_c_f<-do.call("rbind",qq_m_c_f)
-mean(qq_m_c_f$completeness)
-
-#Make a plot with start years and completeness for Europe
-
-
-qq_m_c_f$STAID<-as.character(qq_m_c_f$STAID)
-
-#visualize the timeseries on a map with start year, completeness and stop year
-qq_m_c_f$completeness[which(qq_m_c_f$completeness>1)]<-1
-qq_m_c_f$start.year<-as.numeric(year(qq_m_c_f$start))
-qq_m_c_f$stop.year<-as.numeric(year(qq_m_c_f$stop))
-qq_m_c_f$measurement.years<-qq_m_c_f$stop.year-qq_m_c_f$start.year
+data("qq_meta")
+data("qq_start_stop")
 
 
 
 #What is the completeness of stations with a start around 1965 and stop around 2018?
-get_spatial_coverage<-function(meta=qq_meta,
-                               stations_info=qq_m_c_f,
-                               t1=1980,t2=2017){
-  qq_sub<-stations_info[which(stations_info$start.year<t1 & stations_info$stop.year>t2),]
-
-  qq_sp<-merge(meta,qq_sub,by="STAID")
-
-  # leaflet(qq_sp) %>% addTiles() %>%
-  #   addCircleMarkers(~lon, ~lat, label = ~htmlEscape(name),
-  #              labelOptions = labelOptions(noHide = TRUE,textOnly = FALSE),
-  #              options = markerOptions(riseOnHover = TRUE))
-
-  coordinates(qq_sp)<-~lon+lat
-  crs(qq_sp)<-file_loc$CRS.arg
-
-  m<-mapview(qq_sp,zcol="completeness",at=seq(0,1,0.001))
-  return(list("map"=m,"sp"=qq_sp))
-}
-
 long_records<-get_spatial_coverage(t1=1980)
 
 df.long_records<-data.frame(long_records$sp)
