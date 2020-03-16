@@ -4,10 +4,10 @@
 \alias{prepare_series_ss2qq}
 \title{Prepare monthly files of global radiation from sunshine duration}
 \usage{
-prepare_series_ss2qq(main_dir)
+prepare_series_ss2qq(main_path)
 }
 \arguments{
-\item{main_dir}{main path where the SunCloud folder with all the data is}
+\item{main_path}{main path where the SunCloud folder with all the data is}
 }
 \description{
 Reads the monthly ss2qq files

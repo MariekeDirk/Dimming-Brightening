@@ -19,8 +19,21 @@ crs(ss2qq)<-CRS("+init=epsg:4326")
 ss2qq<-crop(ss2qq,r1)
 ss2qq<-as(ss2qq,"SpatialPoints")
 # ss2qq<-list("sp.points",ss2qq,cex=0.3,alpha=0.8,col="blue",first=FALSE)
+
 #add the homogenized series here
-# qq_hom<-
+main_dir<-"/net/pc150400/nobackup/users/dirksen/data/radiation_europe/"
+hom_series<-fread("/net/pc150400/nobackup/users/dirksen/data/radiation_europe/homogen/QQ-m_1960-2018_series.csv",header=TRUE) #save the homogenized series to a file
+
+#change format hom_series and gather
+ghom_series<-gather(hom_series,key="sta_id",value="QQm",-Date)
+ghom_series$sta_id<-gsub("sta_id","",ghom_series$sta_id)
+id_in<-unique(ghom_series$sta_id)
+
+stations_qq <- read_ECA_info(paste0(main_dir,"SunCloud/qq/stations_qq.txt"))
+stations_qq <- stations_qq[stations_qq$sou_id %in% id_in,]
+
+# load(paste0(main_dir,"homogen/QQ-m_1960-2018.rda"))
+#
 
 countries<-readOGR(dsn="D:/natural_earth/ne_10m_admin_0_countries",layer="ne_10m_admin_0_countries")
 countries_crop<-crop(countries,r1)

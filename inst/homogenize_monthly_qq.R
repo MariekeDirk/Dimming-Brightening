@@ -16,7 +16,7 @@ stations_qq <- read_ECA_info(paste0(main_dir,"SunCloud/qq/stations_qq.txt"))
 series_qq <- read_monthly_QQ(paste0(main_dir,"SunCloud/QQ_monthly.txt"))
 
 stations_ss2qq<- read_ECA_info(paste0(main_dir,"SunCloud/ss2qq/stations.txt"))
-series_ss2qq <-prepare_series_ss2qq(main_dir)
+series_ss2qq <-prepare_series_ss2qq(main_path=main_dir)
 
 #find dublicate between the qq and ss2qq series and keep the qq STAIDs
 qqSTAID<-as.integer(unique(series_qq$STAID))
@@ -40,7 +40,10 @@ stations_comb[grep(" [1-9]",stations_comb$name),]
 #QUINTA DO PESO: 11005 11006 11007
 #or remove these series from the analysis
 # staid_out<-c(10989,10991,10994,10995,10996,10997,10998,10999,11000,11001,11002,11005,11006,11007)
-staid_out<-c(3947,3948,3839) #Madrid stations have problems with sunshine duration
+staid_out<-c(3947,3948,3839,16452) #Madrid stations have problems with sunshine duration
+#16452 is for SARAJEVO which is named twice (I think one time for qq and one time for ss),
+#leaf 1 in because climatol can only handle unique names
+
 stations_comb<-stations_comb[stations_comb$sou_id %notin% staid_out]
 series_comb<-series_comb[series_comb$STAID %notin% staid_out]
 ###################################################################
@@ -60,52 +63,70 @@ series_comb<-series_comb[series_comb$STAID %notin% staid_out]
 # series_comb<-series_comb[series_comb$STAID %in% series_subset]
 ###################################################################
 ###################################################################
-
-# prepare_ecad_climatol(t.start=t.start,t.stop=t.stop,stations_qq=stations_qq,series_qq=series_qq)
-prepare_ecad_climatol(t.start=t.start,t.stop=t.stop,stations_qq=stations_comb,series_qq=series_comb)
 #HOMOGENIZATION PROCEDURE
 #climatol
 # use: 'homogen('QQ',2000,2018,expl=TRUE)' for exploratory analysis
+# Monthly homogenization
+prepare_ecad_climatol(t.start=t.start,t.stop=t.stop,stations_qq=stations_comb,series_qq=series_comb)
 
 homogen('QQ-m',t.start,t.stop,
-        std = 3, snht1 = 30, snht2 = 25, dz.max=10, wd=c(750,500,250))
+        std = 3, snht1 = 30, snht2 = 25, dz.max=8)#, wd=c(750,500,250))
+#####################################################################
+#####################################################################
 #with the monthly break points the daily data can be corrected using metad=TRUE
-#prepare daily series QQ
-#homogen('QQ',t.start,t.stop,metad=TRUE)
+
+#Run climatol for daily data
+subset_time<-function(series){
+  series$QQ[which(series$QQ==-9999)]<-NA
+  series[complete.cases(series),]
+  series$year<-year(series$DATE)
+  series$month<-month(series$DATE)
+  series$mday<-mday(series$DATE)
+  t.start<-min(which(series$month==1 & series$mday==1))
+  t.stop<-max(which(series$month==12 & series$mday==31))
+  if(t.start==Inf | t.stop==-Inf){return(NULL)}
+  return(series[t.start:t.stop])
+}
+
+#Daily QQ
+qq_files <- list.files(paste0(main_dir,"SunCloud/qq/"),pattern="QQ_SOUID*",full.names=TRUE)
+qq_daily <- lapply(qq_files, read_qq)
+qq_daily <- lapply(qq_daily,subset_time)
+
+#The correction of these series with the metad takes a very long time!
+qq_daily <- do.call("rbind",qq_daily)
+prepare_ecad_climatol_daily(t.start=t.start,t.stop=t.stop,stations_qq = stations_qq,series_qq = qq_daily)
+homogen('QQ',t.start,t.stop,metad=TRUE)
+#####################################################################
+#####################################################################
 
 #look at the results
-break_points<-fread(paste0("QQ-m_",t.start,"-",t.stop,"_brk.csv"))
-
-#somehow the series with multiple names are duplicated! something wrong with the quotes?
 staid<-paste0("sta_id",stations_qq$sou_id)
-dahstat("QQ-m",t.start,t.stop,stat='series',cod=staid,last=TRUE) #writes series.csv and flags.csv
 
+break_points<-fread(paste0("QQ-m_",t.start,"-",t.stop,"_brk.csv"))
+break_points$Date<-as.Date(break_points$Date)
+dahstat("QQ-m",t.start,t.stop,stat='series',last=TRUE) #writes series.csv and flags.csv #cod=staid,
 hom_flags<-fread(paste0("QQ-m_",t.start,"-",t.stop,"_flags.csv"),header = TRUE) #fist column=date, others are stations
-hom_series<-fread(paste0("QQ-m_",t.start,"-",t.stop,"_series.csv"),header=TRUE)
+hom_series<-fread(paste0("QQ-m_",t.start,"-",t.stop,"_series.csv"),header=TRUE) #save the homogenized series to a file
+
+#change format hom_series and gather
+ghom_series<-gather(hom_series,key="sta_id",value="QQm",-Date)
+ghom_series$sta_id<-gsub("sta_id","",ghom_series$sta_id)
+
+#subset the QQ stations
+id_in<-unique(ghom_series$sta_id)
+# id_in<-id_in[match(id_in,unique(series_qq$STAID))]
+# ghom_series<-ghom_series[ghom_series$sta_id %in% id_in,]
+# length(unique(ghom_series$sta_id))
+#
 
 #Visualization of the original and corrected timeseries
-# load('QQ_2000-2018.rda')
-# sta_id<-"2566"
-# sta_id<-"4012"
-sta_id<-"162"
+library(ggplot2) #standard plotting
+library(plotly)  #interactive interface around ggplot2
 
-time_series<-hom_series[,1]; names(time_series) <- "time"
-time_series$time<-as.Date(time_series$time)
+unique(ghom_series$sta_id)
+plot_hom_series(id="13")
+plot_hom_series(id="16420")
 
-original_series<-data.frame(series_comb[which(series_comb$STAID==sta_id),]$month_year,
-                            series_comb[which(series_comb$STAID==sta_id),]$QQm
-                            )
-names(original_series) <- c("time","original")
-homogenized_series<-hom_series[,"sta_id162"]; names(homogenized_series) <- "homogenized"
 
-homogenized_series <- data.frame(time_series,homogenized_series)
-
-df<-full_join(original_series,homogenized_series,by="time")
-df_long<-tidyr::gather(df,"series","measurement",-time)
-df_long$series<-as.factor(df_long$series)
-
-library(ggplot2)
-library(plotly)
-p<-ggplot(df_long,aes(time,measurement,color=series)) + geom_line()
-ggplotly(p,dynamicTicks = TRUE)
 
